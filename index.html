@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GraphQL و ارتباط آن با Node.js</title>
+  <style>
+    :root {
+      --bg: #0b1020;
+      --panel: #121933;
+      --panel-2: #0f1530;
+      --text: #e7ecff;
+      --muted: #a8b3d1;
+      --accent: #7c9cff;
+      --accent-2: #5eead4;
+      --line: #2a355e;
+      --code: #0a0f1f;
+      --ok: #86efac;
+      --warn: #fbbf24;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Tahoma, Vazirmatn, Segoe UI, sans-serif;
+      background: linear-gradient(180deg, #0b1020 0%, #0c1226 100%);
+      color: var(--text);
+      line-height: 1.9;
+    }
+
+    .container {
+      width: min(1100px, 92%);
+      margin: 0 auto;
+    }
+
+    header {
+      padding: 64px 0 32px;
+      border-bottom: 1px solid var(--line);
+      background:
+        radial-gradient(circle at top right, rgba(124,156,255,0.18), transparent 30%),
+        radial-gradient(circle at top left, rgba(94,234,212,0.14), transparent 25%);
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: 1.3fr 1fr;
+      gap: 24px;
+      align-items: center;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 8px 14px;
+      background: rgba(124,156,255,0.14);
+      border: 1px solid rgba(124,156,255,0.35);
+      color: #c8d5ff;
+      border-radius: 999px;
+      font-size: 14px;
+      margin-bottom: 18px;
+    }
+
+    h1, h2, h3 {
+      line-height: 1.35;
+      margin-top: 0;
+    }
+
+    h1 {
+      font-size: 40px;
+      margin-bottom: 12px;
+    }
+
+    h2 {
+      font-size: 28px;
+      margin-top: 48px;
+      border-right: 4px solid var(--accent);
+      padding-right: 12px;
+    }
+
+    h3 {
+      font-size: 20px;
+      color: #dbe3ff;
+      margin-top: 28px;
+    }
+
+    p, li {
+      color: var(--muted);
+      font-size: 16px;
+    }
+
+    .lead {
+      font-size: 18px;
+      color: #d6e0ff;
+    }
+
+    .panel {
+      background: linear-gradient(180deg, var(--panel), var(--panel-2));
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 22px;
+      box-shadow: 0 10px 35px rgba(0,0,0,0.25);
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+    }
+
+    .card {
+      background: rgba(255,255,255,0.02);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 18px;
+    }
+
+    code, pre {
+      font-family: Consolas, Monaco, monospace;
+    }
+
+    pre {
+      background: var(--code);
+      color: #d9e2ff;
+      padding: 16px;
+      border-radius: 14px;
+      overflow-x: auto;
+      border: 1px solid #20294a;
+      direction: ltr;
+      text-align: left;
+      line-height: 1.7;
+    }
+
+    .inline-code {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--line);
+      padding: 2px 8px;
+      border-radius: 8px;
+      color: #e4ecff;
+      direction: ltr;
+      display: inline-block;
+    }
+
+    ul {
+      padding-right: 20px;
+    }
+
+    .toc a {
+      display: block;
+      color: #c9d6ff;
+      text-decoration: none;
+      margin: 8px 0;
+    }
+
+    .toc a:hover {
+      color: white;
+    }
+
+    .highlight {
+      color: var(--accent-2);
+      font-weight: bold;
+    }
+
+    .note {
+      border-right: 4px solid var(--accent-2);
+      background: rgba(94,234,212,0.07);
+      padding: 14px 16px;
+      border-radius: 12px;
+      color: #d8fff8;
+    }
+
+    .warning {
+      border-right: 4px solid var(--warn);
+      background: rgba(251,191,36,0.08);
+      padding: 14px 16px;
+      border-radius: 12px;
+      color: #fff3cc;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 14px;
+      background: rgba(255,255,255,0.02);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    th, td {
+      border: 1px solid var(--line);
+      padding: 12px;
+      text-align: right;
+      vertical-align: top;
+    }
+
+    th {
+      background: rgba(124,156,255,0.08);
+      color: #eef2ff;
+    }
+
+    .footer {
+      margin-top: 56px;
+      padding: 24px 0 56px;
+      border-top: 1px solid var(--line);
+      color: #90a0c8;
+      font-size: 14px;
+    }
+
+    @media (max-width: 900px) {
+      .hero, .grid-2, .grid-3 {
+        grid-template-columns: 1fr;
+      }
+
+      h1 {
+        font-size: 30px;
+      }
+
+      h2 {
+        font-size: 24px;
+      }
+    }
+
+    @media print {
+      body {
+        background: white;
+        color: black;
+      }
+
+      .panel, .card, pre, table {
+        box-shadow: none;
+        background: white;
+        color: black;
+      }
+
+      p, li, .lead {
+        color: black;
+      }
+
+      a {
+        color: black;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container hero">
+      <div>
+        <span class="badge">راهنمای حرفه‌ای GraphQL + Node.js</span>
+        <h1>GraphQL چیست و چگونه در Node.js از آن استفاده کنیم؟</h1>
+        <p class="lead">
+          این سند یک نمای علمی، مهندسی و عملی از GraphQL ارائه می‌دهد؛
+          از مفاهیم بنیادی و تفاوت آن با REST گرفته تا طراحی Schema،
+          Resolverها، اتصال به دیتابیس، امنیت، Performance و پیاده‌سازی در Node.js.
+        </p>
+      </div>
+
+      <div class="panel toc">
+        <h3>فهرست سریع</h3>
+        <a href="#intro">1) مقدمه</a>
+        <a href="#rest-vs-graphql">2) تفاوت REST و GraphQL</a>
+        <a href="#core-concepts">3) مفاهیم اصلی</a>
+        <a href="#schema">4) طراحی Schema</a>
+        <a href="#nodejs">5) ارتباط با Node.js</a>
+        <a href="#sample">6) نمونه پروژه عملی</a>
+        <a href="#best-practices">7) Best Practices</a>
+        <a href="#security">8) امنیت</a>
+        <a href="#performance">9) کارایی</a>
+        <a href="#github">10) پیشنهاد برای GitHub</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <section id="intro">
+      <h2>1) مقدمه</h2>
+      <p>
+        GraphQL یک زبان پرس‌وجو برای API و یک runtime برای اجرای آن روی داده‌های تایپ‌شده است.
+        در GraphQL، کل قرارداد داده از طریق یک <span class="highlight">Schema</span> مشخص می‌شود.
+        این Schema تعیین می‌کند که چه داده‌ای قابل درخواست است، چه نوعی دارد و چه عملیات‌هایی
+        روی آن انجام می‌شود.
+      </p>
+
+      <div class="note">
+        ایده اصلی GraphQL این است که کلاینت دقیقاً همان داده‌ای را بگیرد که نیاز دارد؛
+        نه کمتر و نه بیشتر.
+      </div>
+    </section>
+
+    <section id="rest-vs-graphql">
+      <h2>2) تفاوت REST و GraphQL</h2>
+      <div class="grid-2">
+        <div class="card">
+          <h3>REST</h3>
+          <ul>
+            <li>چند endpoint مجزا دارد</li>
+            <li>ساختار پاسخ را معمولاً سرور تعیین می‌کند</li>
+            <li>گاهی با <span class="inline-code">over-fetching</span> و <span class="inline-code">under-fetching</span> مواجه می‌شود</li>
+            <li>نسخه‌بندی API معمولاً رایج‌تر است</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>GraphQL</h3>
+          <ul>
+            <li>معمولاً یک endpoint واحد مثل <span class="inline-code">/graphql</span> دارد</li>
+            <li>کلاینت ساختار داده مورد نیاز را مشخص می‌کند</li>
+            <li>انعطاف‌پذیری بالاتر در دریافت داده</li>
+            <li>Schema تایپ‌شده و self-documenting</li>
+          </ul>
+        </div>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>معیار</th>
+            <th>REST</th>
+            <th>GraphQL</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>تعداد endpoint</td>
+            <td>چندین endpoint</td>
+            <td>اغلب یک endpoint</td>
+          </tr>
+          <tr>
+            <td>انعطاف در انتخاب فیلد</td>
+            <td>کمتر</td>
+            <td>بسیار بالا</td>
+          </tr>
+          <tr>
+            <td>مستندسازی</td>
+            <td>جداگانه یا Swagger/OpenAPI</td>
+            <td>بخشی از Schema</td>
+          </tr>
+          <tr>
+            <td>کنترل ساختار پاسخ</td>
+            <td>سرورمحور</td>
+            <td>کلاینت‌محور</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="core-concepts">
+      <h2>3) مفاهیم اصلی GraphQL</h2>
+
+      <div class="grid-3">
+        <div class="card">
+          <h3>Type</h3>
+          <p>تعریف ساختار داده، مثل User یا Post.</p>
+        </div>
+        <div class="card">
+          <h3>Query</h3>
+          <p>برای خواندن داده استفاده می‌شود.</p>
+        </div>
+        <div class="card">
+          <h3>Mutation</h3>
+          <p>برای ایجاد، ویرایش یا حذف داده استفاده می‌شود.</p>
+        </div>
+        <div class="card">
+          <h3>Resolver</h3>
+          <p>تابعی که داده نهایی هر فیلد یا عملیات را برمی‌گرداند.</p>
+        </div>
+        <div class="card">
+          <h3>Schema</h3>
+          <p>قرارداد رسمی و تایپ‌شده API.</p>
+        </div>
+        <div class="card">
+          <h3>Subscription</h3>
+          <p>برای دریافت داده به‌صورت real-time.</p>
+        </div>
+      </div>
+
+      <h3>مثال ساده Query</h3>
+      <pre><code>query {
+  users {
+    id
+    name
+    email
+  }
+}</code></pre>
+
+      <h3>پاسخ</h3>
+      <pre><code>{
+  "data": {
+    "users": [
+      { "id": "1", "name": "Ali", "email": "ali@example.com" }
+    ]
+  }
+}</code></pre>
+    </section>
+
+    <section id="schema">
+      <h2>4) طراحی Schema</h2>
+      <p>
+        کیفیت یک سیستم GraphQL تا حد زیادی به طراحی درست Schema وابسته است.
+        Schema خوب باید:
+      </p>
+      <ul>
+        <li>معنادار و domain-oriented باشد</li>
+        <li>فیلدها نام‌گذاری شفاف داشته باشند</li>
+        <li>روابط بین موجودیت‌ها واضح باشند</li>
+        <li>تا حد ممکن پایدار و قابل توسعه باشد</li>
+      </ul>
+
+      <h3>نمونه Schema</h3>
+      <pre><code>type User {
+  id: ID!
+  name: String!
+  email: String!
+  posts: [Post!]!
+}
+
+type Post {
+  id: ID!
+  title: String!
+  content: String
+  author: User!
+}
+
+type Query {
+  users: [User!]!
+  user(id: ID!): User
+  posts: [Post!]!
+}
+
+type Mutation {
+  createUser(name: String!, email: String!): User!
+  createPost(title: String!, content: String, authorId: ID!): Post!
+}</code></pre>
+
+      <div class="warning">
+        طراحی Schema نباید صرفاً کپی مستقیم ساختار دیتابیس باشد.
+        Schema باید بر اساس نیاز مصرف‌کننده API و مدل دامنه طراحی شود، نه فقط جدول‌های دیتابیس.
+      </div>
+    </section>
+
+    <section id="nodejs">
+      <h2>5) ارتباط GraphQL با Node.js</h2>
+      <p>
+        Node.js یکی از متداول‌ترین بسترها برای ساخت GraphQL server است.
+        دلیل آن:
+      </p>
+      <ul>
+        <li>اکوسیستم قوی جاوااسکریپت و تایپ‌اسکریپت</li>
+        <li>وجود کتابخانه‌های بالغ مثل Apollo Server و GraphQL Yoga</li>
+        <li>هماهنگی بالا با فرانت‌اندهای مدرن مثل React، Next.js و Vue</li>
+        <li>سادگی در نوشتن resolverها و اتصال به سرویس‌ها و دیتابیس‌ها</li>
+      </ul>
+
+      <h3>فلو اجرا در Node.js</h3>
+      <ol>
+        <li>کلاینت یک Query یا Mutation می‌فرستد</li>
+        <li>GraphQL server درخواست را با Schema اعتبارسنجی می‌کند</li>
+        <li>Resolver مربوطه اجرا می‌شود</li>
+        <li>Resolver به دیتابیس یا سرویس دیگر متصل می‌شود</li>
+        <li>پاسخ نهایی طبق ساختار requested fields برگردانده می‌شود</li>
+      </ol>
+    </section>
+
+    <section id="sample">
+      <h2>6) نمونه پروژه عملی در Node.js</h2>
+
+      <h3>نصب پکیج‌ها</h3>
+      <pre><code>npm init -y
+npm install @apollo/server graphql express cors body-parser
+npm install @as-integrations/express5</code></pre>
+
+      <h3>نمونه فایل سرور</h3>
+      <pre><code>import express from "express";
+import cors from "cors";
+import bodyParser from "body-parser";
+import { ApolloServer } from "@apollo/server";
+import { expressMiddleware } from "@as-integrations/express5";
+
+const users = [
+  { id: "1", name: "Ali", email: "ali@example.com" },
+  { id: "2", name: "Sara", email: "sara@example.com" }
+];
+
+const posts = [
+  { id: "1", title: "GraphQL Intro", content: "Hello GraphQL", authorId: "1" }
+];
+
+const typeDefs = `#graphql
+  type User {
+    id: ID!
+    name: String!
+    email: String!
+    posts: [Post!]!
+  }
+
+  type Post {
+    id: ID!
+    title: String!
+    content: String
+    author: User!
+  }
+
+  type Query {
+    users: [User!]!
+    user(id: ID!): User
+    posts: [Post!]!
+  }
+
+  type Mutation {
+    createUser(name: String!, email: String!): User!
+    createPost(title: String!, content: String, authorId: ID!): Post!
+  }
+`;
+
+const resolvers = {
+  Query: {
+    users: () => users,
+    user: (_, { id }) => users.find(user => user.id === id),
+    posts: () => posts
+  },
+  Mutation: {
+    createUser: (_, { name, email }) => {
+      const newUser = {
+        id: String(users.length + 1),
+        name,
+        email
+      };
+      users.push(newUser);
+      return newUser;
+    },
+    createPost: (_, { title, content, authorId }) => {
+      const newPost = {
+        id: String(posts.length + 1),
+        title,
+        content,
+        authorId
+      };
+      posts.push(newPost);
+      return newPost;
+    }
+  },
+  User: {
+    posts: (parent) => posts.filter(post => post.authorId === parent.id)
+  },
+  Post: {
+    author: (parent) => users.find(user => user.id === parent.authorId)
+  }
+};
+
+const server = new ApolloServer({
+  typeDefs,
+  resolvers
+});
+
+await server.start();
+
+const app = express();
+app.use("/graphql", cors(), bodyParser.json(), expressMiddleware(server));
+
+app.listen(4000, () => {
+  console.log("Server running at http://localhost:4000/graphql");
+});</code></pre>
+
+      <h3>نمونه Query</h3>
+      <pre><code>query {
+  users {
+    id
+    name
+    posts {
+      title
+    }
+  }
+}</code></pre>
+
+      <h3>نمونه Mutation</h3>
+      <pre><code>mutation {
+  createUser(name: "Reza", email: "reza@example.com") {
+    id
+    name
+    email
+  }
+}</code></pre>
+    </section>
+
+    <section id="best-practices">
+      <h2>7) Best Practices</h2>
+
+      <div class="grid-2">
+        <div class="card">
+          <h3>1. Schema-first Design</h3>
+          <p>
+            ابتدا Schema را طراحی کن، سپس resolver و دیتابیس را با آن هماهنگ کن.
+            این روش باعث پایداری API و شفافیت ارتباط تیمی می‌شود.
+          </p>
+        </div>
+
+        <div class="card">
+          <h3>2. Naming Consistency</h3>
+          <p>
+            نام typeها، queryها و mutationها باید واضح، پایدار و قابل پیش‌بینی باشند.
+          </p>
+        </div>
+
+        <div class="card">
+          <h3>3. Resolver Separation</h3>
+          <p>
+            منطق کسب‌وکار را مستقیم داخل resolver شلوغ نکن؛
+            بهتر است service layer داشته باشی.
+          </p>
+        </div>
+
+        <div class="card">
+          <h3>4. Validation</h3>
+          <p>
+            ورودی‌ها را اعتبارسنجی کن و روی فرض خوش‌بینانه درباره داده‌های کاربر حساب نکن.
+          </p>
+        </div>
+
+        <div class="card">
+          <h3>5. Error Handling</h3>
+          <p>
+            خطاها را استاندارد، قابل فهم و بدون نشت اطلاعات داخلی سیستم برگردان.
+          </p>
+        </div>
+
+        <div class="card">
+          <h3>6. Type Safety</h3>
+          <p>
+            در پروژه‌های جدی، استفاده از TypeScript انتخاب بسیار خوبی است.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section id="security">
+      <h2>8) امنیت در GraphQL</h2>
+      <ul>
+        <li>Authentication و Authorization را جدی بگیر</li>
+        <li>Depth Limiting برای جلوگیری از queryهای بیش‌ازحد عمیق</li>
+        <li>Query Cost Analysis برای کنترل بار پردازشی</li>
+        <li>Rate Limiting برای جلوگیری از abuse</li>
+        <li>غیرفعال کردن introspection در محیط production در صورت نیاز</li>
+        <li>ماسک کردن خطاهای داخلی</li>
+      </ul>
+
+      <h3>نمونه ایده احراز هویت</h3>
+      <pre><code>app.use("/graphql", cors(), bodyParser.json(), expressMiddleware(server, {
+  context: async ({ req }) => {
+    const token = req.headers.authorization || "";
+    const user = validateToken(token);
+    return { user };
+  }
+}));</code></pre>
+
+      <p>
+        سپس در resolverها می‌توانی از <span class="inline-code">context.user</span> برای کنترل دسترسی استفاده کنی.
+      </p>
+    </section>
+
+    <section id="performance">
+      <h2>9) کارایی و Performance</h2>
+      <p>
+        یکی از چالش‌های مهم در GraphQL مسئله <span class="inline-code">N+1 Query Problem</span> است.
+        مثلاً اگر لیست کاربران را بگیری و سپس برای هر کاربر جداگانه پست‌ها را از دیتابیس بخوانی،
+        تعداد queryها به‌صورت غیرضروری زیاد می‌شود.
+      </p>
+
+      <h3>راه‌حل متداول: DataLoader</h3>
+      <p>
+        DataLoader درخواست‌های مشابه را batch و cache می‌کند تا تعداد تماس با دیتابیس کم شود.
+      </p>
+
+      <pre><code>import DataLoader from "dataloader";
+
+const postLoader = new DataLoader(async (userIds) => {
+  // همه پست‌ها را برای چند userId یکجا از DB بگیر
+  // سپس نتیجه را به‌ترتیب userIds برگردان
+});</code></pre>
+
+      <h3>نکات عملکردی دیگر</h3>
+      <ul>
+        <li>استفاده از pagination</li>
+        <li>اجتناب از resolverهای سنگین</li>
+        <li>استفاده از caching در لایه مناسب</li>
+        <li>استفاده از persisted queries در پروژه‌های بزرگ</li>
+      </ul>
+    </section>
+
+    <section id="github">
+      <h2>10) برای GitHub چه چیزی بگذاریم؟</h2>
+      <p>
+        اگر هدفت حرفه‌ای بودن، خوانایی، قابلیت توسعه و نمایش خوب است،
+        پیشنهاد من این است:
+      </p>
+
+      <div class="panel">
+        <h3>ترکیب پیشنهادی نهایی</h3>
+        <ul>
+          <li><span class="highlight">README.md</span> برای معرفی کوتاه پروژه</li>
+          <li><span class="highlight">docs/index.html</span> برای مستند کامل و شیک</li>
+          <li><span class="highlight">examples/</span> برای کدهای Node.js</li>
+          <li><span class="highlight">graphQL-guide.pdf</span> فقط به‌عنوان نسخه خروجی یا release asset</li>
+        </ul>
+      </div>
+
+      <h3>نمونه README کوتاه</h3>
+      <pre><code># GraphQL Guide
+
+A professional Persian guide about GraphQL and its relationship with Node.js.
+
+## Contents
+- What is GraphQL?
+- REST vs GraphQL
+- Schema Design
+- Resolvers
+- Node.js Integration
+- Security & Performance
+
+## Docs
+Open: `docs/index.html`</code></pre>
+    </section>
+
+    <section>
+      <h2>11) جمع‌بندی نهایی</h2>
+      <p>
+        GraphQL برای سیستم‌هایی که نیاز به انعطاف در خواندن داده، مدل تایپ‌شده،
+        توسعه‌پذیری و تعامل قوی بین فرانت‌اند و بک‌اند دارند، انتخاب بسیار قدرتمندی است.
+        Node.js نیز به دلیل اکوسیستم بالغ و یکپارچگی بالا با JavaScript/TypeScript،
+        بستر بسیار مناسبی برای پیاده‌سازی GraphQL server محسوب می‌شود.
+      </p>
+
+      <div class="note">
+        اگر فقط یک خروجی بخواهی: <strong>HTML بهتر از PDF است</strong>؛
+        چون هم برای GitHub مناسب‌تر است و هم بعداً هر زمان بخواهی می‌توانی از آن PDF بگیری.
+      </div>
+    </section>
+
+    <div class="footer">
+      تهیه‌شده برای مستندسازی حرفه‌ای GraphQL با رویکرد علمی، کاربردی و مناسب GitHub.
+    </div>
+  </main>
+</body>
+</html>
